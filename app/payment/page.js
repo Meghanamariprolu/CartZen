@@ -1,4 +1,4 @@
-'use client';
+'use client';  // Ensure it's a client-side component
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -92,14 +92,6 @@ const PaymentPage = () => {
                 <p><strong>Amount:</strong> ${paymentDetails.amount}</p>
                 <p><strong>Date:</strong> {paymentDetails.date}</p>
               </div>
-
-              <div className="mt-6 text-center">
-                <Link href="/">
-                  <button className="bg-blue-500 text-black px-6 py-3 mt-4 rounded-lg hover:bg-blue-600 transition">
-                    Go to Home
-                  </button>
-                </Link>
-              </div>
             </div>
           </>
         )}
@@ -107,9 +99,9 @@ const PaymentPage = () => {
         {/* Link to Cancel/Go back */}
         {!paymentSuccess && (
           <div className="mt-4 text-center">
-            <Link href="/cart">
+            <Link href="/shop">
               <button className="bg-blue-500 text-black px-6 py-3 mt-4 rounded-lg hover:bg-purple-600 transition">
-                  Go to Home
+                  Go to shop
               </button>
             </Link>
           </div>

@@ -1,125 +1,268 @@
 'use client';
 
-import { useParams } from 'next/navigation';  // Correct hook for dynamic routing in the app directory
-import { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';  // Use this relative path
-import Link from 'next/link';  // For Back to Shop
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BsHeart, BsHeartFill, BsStarFill, BsBag, BsShieldCheck, BsArrowLeftRight, BsCamera } from 'react-icons/bs';
+import UnifiedTryOn from '../../components/TryOn/UnifiedTryOn';
+import { useCart } from '../../context/CartContext';
+import Link from 'next/link';
 
 const ProductDetails = () => {
-  const { id } = useParams();  // Get the product ID from the URL params
+  const { id } = useParams();
+  const { addToCart, toggleWishlist, wishlist } = useCart();
   const [product, setProduct] = useState(null);
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [showNotification, setShowNotification] = useState(false);  // State to manage the notification
+  const [loading, setLoading] = useState(true);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [error, setError] = useState(null);
+  const [isAROpen, setIsAROpen] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const [isRecommending, setIsRecommending] = useState(false);
+  const [errorDetail, setErrorDetail] = useState("");
 
-  // Fetch product data
+  const handleSizeRecommendation = async () => {
+    setIsRecommending(true);
+    try {
+      // Mock user body metrics
+      const userMetrics = {
+        height_cm: 180,
+        weight_kg: 75,
+        gender: 'male',
+        fit_preference: 'slim'
+      };
+
+      const response = await axios.post('/api/ai/size-recommend', {
+        product_id: id,
+        user_measurements: userMetrics
+      });
+
+      setRecommendation(response.data);
+    } catch (err) {
+      console.error("AI Recommendation Error:", err);
+    } finally {
+      setIsRecommending(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       const fetchProduct = async () => {
-        const res = await fetch(`https://fakestoreapi.com/products/${id}`);
-        const data = await res.json();
-        setProduct(data);
-      };
+        try {
+          const response = await axios.get(`https://api.escuelajs.co/api/v1/products/${id}`);
+          const item = response.data;
 
+          // Helper to clean Platzi image URLs
+          const cleanImageUrl = (url) => {
+            if (!url) return 'https://placehold.co/600x400?text=No+Image';
+            let cleaned = url.replace(/[\[\]"]/g, '');
+            try {
+              if (cleaned.startsWith('http')) return cleaned;
+              return JSON.parse(url);
+            } catch (e) {
+              return cleaned;
+            }
+          };
+
+          const mappedProduct = {
+            ...item,
+            image: (item.images && item.images.length > 0) ? cleanImageUrl(item.images[0]) : 'https://placehold.co/600x400?text=No+Image',
+            images: (item.images || []).map(cleanImageUrl),
+            category: item.category ? item.category.name : 'Uncategorized',
+            rating: { rate: (Math.random() * 2 + 3).toFixed(1), count: Math.floor(Math.random() * 500) } // Mock rating
+          };
+
+          setProduct(mappedProduct);
+          setLoading(false);
+        } catch (err) {
+          console.error("Error fetching product:", err);
+          setError("Failed to load product details.");
+          setErrorDetail(err.message || String(err));
+          setLoading(false);
+        }
+      };
       fetchProduct();
     }
   }, [id]);
 
-  // Load cart and wishlist from localStorage
-  useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    const savedWishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-    setCart(savedCart);
-    setWishlist(savedWishlist);
-  }, []);
+  if (loading) return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>
+  );
 
-  // Add product to the cart
-  const handleAddToCart = (product) => {
-    const updatedCart = [...cart];
-    const existingProductIndex = updatedCart.findIndex((item) => item.id === product.id);
-    if (existingProductIndex > -1) {
-      updatedCart[existingProductIndex].quantity += 1;  // Increment quantity if product already in cart
-    } else {
-      updatedCart.push({ ...product, quantity: 1 });  // Add product if not in cart
-    }
-    setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));  // Save to localStorage
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-screen">
+      <p className="text-xl font-bold text-gray-800 mb-2">{error}</p>
+      <p className="text-xs text-red-500 mb-4">Diagnostic: {errorDetail}</p>
+      <Link href="/shop" className="text-primary font-bold hover:underline">Back to Shop</Link>
+    </div>
+  );
 
-    // Show the notification for 2 seconds
-    setShowNotification(true);
-    setTimeout(() => {
-      setShowNotification(false);  // Hide notification after 2 seconds
-    }, 2000);
-  };
+  const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+  // Safety check for wishlist
+  const isInWishlist = product && wishlist.some(item => item.id === product.id);
 
-  // Add product to the wishlist
-  const handleAddToWishlist = (product) => {
-    const updatedWishlist = [...wishlist];
-    const existingProductIndex = updatedWishlist.findIndex((item) => item.id === product.id);
-    if (existingProductIndex === -1) {
-      updatedWishlist.push(product);  // Add product to wishlist if not already present
-    }
-    setWishlist(updatedWishlist);
-    localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));  // Save to localStorage
-
-    // Show the notification for 2 seconds
-    setShowNotification(true);
-    setTimeout(() => {
-      setShowNotification(false);  // Hide notification after 2 seconds
-    }, 2000);
-  };
-
-  // Check if product is already in the cart
-  const productInCart = cart.find((item) => item.id === product?.id);
-
-  // Check if product is already in the wishlist
-  const productInWishlist = wishlist.find((item) => item.id === product?.id);
-
-  if (!product) return <div>Loading...</div>;
+  if (!product) return null;
 
   return (
-    <div className="min-h-screen bg-black p-8 mt-8">
-      {/* Include Navbar */}
-      <Navbar cartCount={cart.length} wishlistCount={wishlist.length} showNotification={showNotification} />
-
-      {/* Product Details Section */}
-      <div className="container mx-auto flex flex-col lg:flex-row items-center justify-center bg-purple-200 rounded-lg shadow-lg p-8 mt-8 space-y-8 lg:space-y-0 lg:space-x-8">
-        {/* Product Image */}
-        <div className="flex justify-center lg:w-1/2">
-          <img
-            src={product.image}
-            alt={product.title}
-            className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-          />
+    <div className="bg-white min-h-screen pt-10 pb-20">
+      <div className="max-w-screen-xl mx-auto px-4">
+        {/* Breadcrumbs */}
+        <div className="mb-8 flex items-center space-x-2 text-xs text-gray-400">
+          <Link href="/" className="hover:text-gray-900">Home</Link>
+          <span>/</span>
+          <Link href="/shop" className="hover:text-gray-900 capitalize">{product.category}</Link>
+          <span>/</span>
+          <span className="text-gray-900 font-bold truncate">{product.title}</span>
         </div>
 
-        {/* Product Info */}
-        <div className="lg:w-1/2 text-center lg:text-left">
-          <h1 className="text-4xl font-semibold text-black mb-4">{product.title}</h1>
-          <p className="text-2xl font-bold text-gray-700 mb-4">${product.price}</p>
-          <p className="text-lg text-gray-600 mb-4">{product.description}</p>
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Left: Image Gallery (Single large image for demo) */}
+          <div className="lg:w-3/5">
+            <div className="bg-gray-50 rounded-lg p-8 sticky top-28 flex justify-center items-center h-[500px] md:h-[700px]">
+              <motion.img
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                src={product.image}
+                alt={product.title}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+          </div>
 
-          {/* Buttons: Add to Cart or Update Quantity */}
-          <div className="flex justify-center lg:justify-start space-x-4 mt-6">
-            <button
-              onClick={() => handleAddToCart(product)}
-              className="bg-purple-500 text-white px-6 py-2  rounded-lg hover:bg-purple-600 transition"
-            >
-              {productInCart ? 'In Cart' : 'Add to Cart'}
-            </button>
+          {/* Right: Product Details */}
+          <div className="lg:w-2/5">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{product.title}</h1>
+            <p className="text-lg text-gray-400 mb-4">{product.category}</p>
 
-            <button
-              onClick={() => handleAddToWishlist(product)}
-              className={`bg-blue-500 text-white px-6 py-2  rounded-lg hover:bg-blue-600 transition ${productInWishlist ? 'bg-blue-300' : ''}`}
-            >
-              {productInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-            </button>
+            {/* Rating */}
+            <div className="flex items-center space-x-2 border border-gray-100 px-3 py-1 w-fit rounded-sm mb-6 bg-gray-50">
+              <span className="text-sm font-bold">{product.rating.rate}</span>
+              <BsStarFill className="text-green-600 text-xs" />
+              <div className="border-l border-gray-300 h-4 mx-2"></div>
+              <span className="text-sm text-gray-500">{product.rating.count} Ratings</span>
+            </div>
 
-            <Link href="/shop">
-              <button className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition">
-                Back to Shop
+            <hr className="mb-6 border-gray-100" />
+
+            {/* Price */}
+            <div className="flex items-end space-x-4 mb-8">
+              <span className="text-2xl font-bold text-gray-900">${product.price}</span>
+              <span className="text-lg text-gray-400 line-through">${(product.price * 1.5).toFixed(2)}</span>
+              <span className="text-lg text-orange-400 font-bold"> (33% OFF)</span>
+            </div>
+
+            <p className="text-xs font-bold text-green-600 mb-8 tracking-widest uppercase">inclusive of all taxes</p>
+
+            {/* Select Size */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-bold text-sm uppercase tracking-widest text-gray-900">Select Size</span>
+                <button className="text-primary text-xs font-bold hover:underline">SIZE CHART</button>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {sizes.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full border text-sm font-bold transition-all flex items-center justify-center
+                      ${selectedSize === size
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-gray-200 text-gray-700 hover:border-primary'}`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* AR & AI Intelligence Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <button
+                onClick={() => setIsAROpen(true)}
+                className="flex items-center justify-center space-x-2 bg-black text-white py-3 rounded-sm font-black uppercase tracking-widest text-[10px] hover:bg-gray-800 transition-all border border-black shadow-lg shadow-black/10 group"
+              >
+                <BsCamera className="text-primary group-hover:scale-110 transition-transform" />
+                <span>Virtual Try-On</span>
               </button>
-            </Link>
+
+              <button
+                onClick={handleSizeRecommendation}
+                disabled={isRecommending}
+                className="flex items-center justify-center space-x-2 bg-white text-gray-900 py-3 rounded-sm font-black uppercase tracking-widest text-[10px] hover:bg-gray-50 transition-all border border-gray-200"
+              >
+                <BsStarFill className="text-primary" />
+                <span>{isRecommending ? 'AI Analyzing...' : 'What\'s my size?'}</span>
+              </button>
+            </div>
+
+            {/* AI Recommendation Result */}
+            <AnimatePresence>
+              {recommendation && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-8 p-4 bg-primary/5 border border-primary/20 rounded-sm relative overflow-hidden"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-primary text-white p-2 rounded-full mt-1">
+                      <BsStarFill size={10} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1">AI Recommendation</p>
+                      <p className="text-xs font-bold text-gray-900 leading-relaxed">{recommendation.fit_analysis}</p>
+                      <div className="mt-2 flex items-center space-x-2">
+                        <span className="text-[10px] font-black text-gray-400 capitalize">Recommended:</span>
+                        <span className="bg-primary text-white text-[10px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter">Size {recommendation.recommended_size}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <button
+                onClick={() => addToCart(product)}
+                className="flex-1 bg-primary text-white py-4 rounded font-bold uppercase tracking-widest flex items-center justify-center space-x-3 hover:bg-primary-hover transition-colors"
+              >
+                <BsBag className="text-xl" />
+                <span>Add to Bag</span>
+              </button>
+              <button
+                onClick={() => toggleWishlist(product)}
+                className="flex-1 border border-gray-300 py-4 rounded font-bold uppercase tracking-widest flex items-center justify-center space-x-3 hover:border-gray-900 transition-colors"
+              >
+                {isInWishlist ? <BsHeartFill className="text-primary text-xl" /> : <BsHeart className="text-xl" />}
+                <span>{isInWishlist ? 'Wishlisted' : 'Wishlist'}</span>
+              </button>
+            </div>
+
+            <UnifiedTryOn isOpen={isAROpen} onClose={() => setIsAROpen(false)} product={product} />
+
+            <hr className="mb-8 border-gray-100" />
+
+            {/* Product Details Section */}
+            <div className="mb-8">
+              <h4 className="font-bold text-sm uppercase tracking-widest text-gray-900 mb-4">Product Details</h4>
+              <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                {product.description}
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <div className="p-2 bg-gray-50 rounded-full text-gray-600"><BsArrowLeftRight /></div>
+                  <span className="text-sm font-bold text-gray-700">14 day return & exchange</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="p-2 bg-gray-50 rounded-full text-gray-600"><BsShieldCheck /></div>
+                  <span className="text-sm font-bold text-gray-700">100% Original Products</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -128,13 +271,3 @@ const ProductDetails = () => {
 };
 
 export default ProductDetails;
-
-
-
-
-
-
-
-
-
-

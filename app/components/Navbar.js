@@ -1,56 +1,144 @@
-'use client'; // Ensure it's a client-side component
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { BsCart3 } from 'react-icons/bs'; // Import the BsCart3 icon from react-icons/bs
+'use client';
 
-const Navbar = ({ cartCount }) => {
+import React, { useState, useRef, useEffect } from 'react';
+
+import Link from 'next/link';
+import { useCart } from '../context/CartContext';
+import { BsCart3, BsHeart, BsPerson, BsSearch, BsCamera } from 'react-icons/bs';
+import { useRouter } from 'next/navigation';
+
+const Navbar = () => {
+  const { cartCount, wishlist } = useCart();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const fileInputRef = useRef(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check for saved profile image on mount and when local storage changes
+    const loadProfileImage = () => {
+      const savedProfile = localStorage.getItem('user_profile');
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile);
+        if (parsed.image) {
+          setProfileImage(parsed.image);
+        }
+      }
+    };
+
+    loadProfileImage();
+
+    // Optional: Listen for storage events to update immediately if changed in another tab
+    window.addEventListener('storage', loadProfileImage);
+    return () => window.removeEventListener('storage', loadProfileImage);
+  }, []);
+
+  const handleCameraClick = () => {
+    // Simplified for web environment:
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Simulate visual search by navigating with a query param
+      router.push(`/shop?visual_search=true&img=${file.name}`);
+    }
+  };
+
   return (
-    <nav className=" text-white p-4 fixed w-full top-0 left-0 z-50 bg-gradient-to-r from-teal-400 via-purple-500 to-pink-500">
-      <div className="max-w-screen-xl mx-auto flex justify-between items-center">
-        {/* Left Section (Logo or Home) */}
-        <div className="flex items-center space-x-6">
+    <nav className="bg-white border-b border-gray-100 fixed w-full top-0 left-0 z-50 h-20 flex items-center shadow-sm">
+      <div className="max-w-screen-xl mx-auto px-4 w-full flex justify-between items-center h-full">
+        {/* Logo Section */}
+        <div className="flex items-center">
           <Link href="/">
-            <span className="text-2xl font-bold text-black-300 cursor-pointer">CartZen</span>
+            <span className="text-2xl font-black tracking-tighter text-gray-900 cursor-pointer italic">
+              CART<span className="text-primary NOT-italic">ZEN</span>
+            </span>
           </Link>
         </div>
 
-        {/* Right Section (Shop, Payment, Cart, Logout) */}
-        <div className="flex items-center space-x-4">
-          {/* Shop Page Link */}
-          <Link href="/shop">
-            <span className="hover:text-blue-400 cursor-pointer">Shop</span>
-          </Link>
-
-          {/* Cart Link with Icon and Cart Count */}
-          <Link href="/cart" className="relative flex items-center space-x-2 hover:text-blue-400 cursor-pointer">
-            <BsCart3 className="text-xl" /> {/* Cart Icon */}
-            {cartCount > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs px-2 py-1 -mt-2 -mr-2">
-                {cartCount}
+        <div className="hidden lg:flex items-center space-x-8 h-full">
+          {[
+            { name: 'HOME', slug: 'home-decoration' },
+            { name: 'WATCHES', slug: 'mens-watches' },
+            { name: 'DASHBOARD', href: '/dashboard' }
+          ].map((item) => (
+            <Link key={item.name} href={item.href || `/shop?category=${item.slug}`}>
+              <span className="text-[13px] font-black text-gray-800 hover:border-b-4 hover:border-primary h-20 flex items-center transition-all cursor-pointer tracking-wider">
+                {item.name}
               </span>
-            )}
-            <span>Cart</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <div className="hidden md:flex items-center bg-gray-100 border border-transparent focus-within:bg-white focus-within:border-gray-200 rounded px-4 py-2 w-80 transition-all group">
+          <BsSearch className="text-gray-400 mr-3 group-focus-within:text-gray-900" />
+          <input
+            type="text"
+            placeholder="Search for products, brands and more"
+            className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {/* Visual Search (Camera Icon) */}
+          <div className="relative ml-2">
+            <BsCamera
+              className="text-gray-400 hover:text-primary cursor-pointer transition-colors text-lg"
+              onClick={handleCameraClick}
+              title="Search by image"
+            />
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+          </div>
+        </div>
+
+        {/* Icons Section */}
+        <div className="flex items-center space-x-6">
+          {/* Profile */}
+          <Link href="/profile">
+            <div className="flex flex-col items-center cursor-pointer group">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-6 h-6 rounded-full object-cover border border-gray-200 group-hover:border-primary" />
+              ) : (
+                <BsPerson className="text-xl text-gray-800 group-hover:text-primary" />
+              )}
+              <span className="text-[10px] font-bold text-gray-800 group-hover:text-primary">Profile</span>
+            </div>
           </Link>
 
-          {/* Payment Page Link */}
-          <Link href="/payment">
-            <span className="hover:text-blue-400 cursor-pointer">Payment</span>
-          </Link>
-
-          {/* Login Page Link */}
+          {/* Wishlist */}
           <Link href="/wishlist">
-            <span className="hover:text-blue-400 cursor-pointer">Wishlist</span>
+            <div className="flex flex-col items-center cursor-pointer group relative">
+              <BsHeart className="text-xl text-gray-800 group-hover:text-primary" />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[8px] font-bold rounded-full px-1">
+                  {wishlist.length}
+                </span>
+              )}
+              <span className="text-[10px] font-bold text-gray-800 group-hover:text-primary">Wishlist</span>
+            </div>
           </Link>
 
-          {/* Register Page Link */}
-          <Link href="/register">
-            <span className="hover:text-blue-400 cursor-pointer">AboutUs</span>
+          {/* Bag/Cart */}
+          <Link href="/cart">
+            <div className="flex flex-col items-center cursor-pointer group relative">
+              <BsCart3 className="text-xl text-gray-800 group-hover:text-primary" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[8px] font-bold rounded-full px-1">
+                  {cartCount}
+                </span>
+              )}
+              <span className="text-[10px] font-bold text-gray-800 group-hover:text-primary">Bag</span>
+            </div>
           </Link>
 
-          {/* Logout Page Link */}
-          <Link href="/logout">
-            <span className="hover:text-blue-400 cursor-pointer">Logout</span> {/* Added Logout Link */}
-          </Link>
         </div>
       </div>
     </nav>
@@ -58,4 +146,5 @@ const Navbar = ({ cartCount }) => {
 };
 
 export default Navbar;
+
 
