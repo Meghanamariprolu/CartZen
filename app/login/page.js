@@ -27,7 +27,7 @@ const LoginPage = () => {
 
     const handleSocialSignIn = async (provider) => {
         setLoading(true);
-        await signIn(provider, { callbackUrl: '/shop' });
+        await signIn(provider, { callbackUrl: '/dashboard' });
     };
 
     const handleSendOtp = () => {
@@ -48,7 +48,7 @@ const LoginPage = () => {
         if (otp === '123456') {
             setSuccess('OTP verified! Logging in...');
             setLoading(true);
-            router.push('/shop');
+            router.push('/dashboard');
         } else {
             setError('Invalid OTP. Please try again.');
         }
@@ -78,7 +78,7 @@ const LoginPage = () => {
                 setLoading(false);
             } else {
                 setSuccess('Logged in successfully! Redirecting...');
-                router.push('/shop');
+                router.push('/dashboard');
             }
         } else {
             // REGISTER logic
