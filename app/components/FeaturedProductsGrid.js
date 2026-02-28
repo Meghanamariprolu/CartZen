@@ -12,11 +12,11 @@ const FeaturedProductsGrid = () => {
     useEffect(() => {
         const fetchFeatured = async () => {
             try {
-                const res = await axios.get('https://api.escuelajs.co/api/v1/products?offset=0&limit=6');
-                const mapped = res.data.map(item => ({
+                const res = await axios.get('https://dummyjson.com/products?limit=6');
+                const mapped = res.data.products.map(item => ({
                     ...item,
-                    image: (item.images && item.images.length > 0) ? cleanImageUrl(item.images[0]) : 'https://placehold.co/600x400',
-                    brand: item.category ? item.category.name : 'Generic'
+                    image: item.thumbnail || 'https://placehold.co/600x400',
+                    brand: item.brand || item.category || 'Generic'
                 }));
                 setProducts(mapped);
                 setLoading(false);
@@ -27,17 +27,6 @@ const FeaturedProductsGrid = () => {
         };
         fetchFeatured();
     }, []);
-
-    const cleanImageUrl = (url) => {
-        if (!url) return 'https://placehold.co/600x400';
-        let cleaned = url.replace(/[\[\]"]/g, '');
-        try {
-            if (cleaned.startsWith('http')) return cleaned;
-            return JSON.parse(url);
-        } catch (e) {
-            return cleaned;
-        }
-    };
 
     if (loading) return <div className="text-center py-10">Loading Featured...</div>;
 

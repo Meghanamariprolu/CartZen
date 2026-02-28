@@ -5,13 +5,24 @@ import { useCart } from '../context/CartContext';
 import { BsShieldCheck, BsCreditCard, BsCashStack, BsLightningCharge, BsCheckCircleFill, BsArrowLeft } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+import axios from 'axios';
 
 const CheckoutPage = () => {
+    const { data: session } = useSession();
+    const searchParams = useSearchParams();
+    const isDirect = searchParams.get('direct') === 'true';
+    const productId = searchParams.get('productId');
+
     const { cart, cartCount, clearCart } = useCart();
     const [step, setStep] = useState(2); // 2: Address, 3: Payment
     const [paymentMethod, setPaymentMethod] = useState('card');
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // Direct Purchase State
+    const [directItem, setDirectItem] = useState(null);
 
     // Address State
     const [address, setAddress] = useState({
@@ -23,8 +34,56 @@ const CheckoutPage = () => {
     });
     const [addressError, setAddressError] = useState('');
 
-    const totalMRP = cart.reduce((total, item) => total + (item.price * 1.5 * item.quantity), 0);
-    const totalAmount = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    useEffect(() => {
+        if (isDirect && productId) {
+            fetchDirectProduct(productId);
+        }
+        if (session) {
+            fetchUserAddress();
+        }
+    }, [isDirect, productId, session]);
+
+    const fetchDirectProduct = async (id) => {
+        try {
+            const res = await axios.get(`https://dummyjson.com/products/${id}`);
+            const item = res.data;
+            setDirectItem({
+                ...item,
+                quantity: 1,
+                thumbnail: item.thumbnail
+            });
+        } catch (err) {
+            console.error("Failed to fetch direct product:", err);
+        }
+    };
+
+    const fetchUserAddress = async () => {
+        try {
+            const res = await axios.get('/api/user/profile');
+            const data = res.data;
+            if (data.address) {
+                setAddress({
+                    name: data.name || '',
+                    street: data.address || '',
+                    city: 'Hyderabad', // Default or from API
+                    zip: '500001',
+                    phone: data.phone || ''
+                });
+            }
+        } catch (err) {
+            console.error("Failed to fetch user address:", err);
+        }
+    };
+
+    const checkoutItems = isDirect ? (directItem ? [directItem] : []) : cart;
+    const itemsCount = isDirect ? 1 : cartCount;
+
+    const subtotal = checkoutItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const totalMRP = checkoutItems.reduce((total, item) => total + (item.price * 1.5 * item.quantity), 0);
+    const discountAmount = totalMRP - subtotal;
+    const isCouponEligible = subtotal > 50;
+    const couponDiscount = isCouponEligible ? subtotal * 0.1 : 0;
+    const totalAmount = subtotal - couponDiscount;
 
     const handleAddressSubmit = (e) => {
         e.preventDefault();
@@ -45,10 +104,10 @@ const CheckoutPage = () => {
         }, 2000);
     };
 
-    if (cart.length === 0 && !isSuccess) {
+    if (!isSuccess && ((!isDirect && cart.length === 0) || (isDirect && !directItem))) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Your bag is empty!</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">{isDirect ? 'Loading product...' : 'Your bag is empty!'}</h2>
                 <Link href="/shop" className="text-primary font-bold hover:underline">Continue Shopping</Link>
             </div>
         );
@@ -116,73 +175,111 @@ const CheckoutPage = () => {
                 {/* Left Section: Content based on Step */}
                 <div className="lg:w-2/3">
 
-                    {/* STEP 2: ADDRESS FORM */}
+                    {/* STEP 2: ADDRESS FORM / SELECTION */}
                     {step === 2 && (
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                            <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm mb-8">Shipping Address</h3>
-                            <form onSubmit={handleAddressSubmit} className="space-y-6 max-w-lg">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Full Name</label>
-                                    <input
-                                        type="text"
-                                        value={address.name}
-                                        onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                                        className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                        placeholder="John Doe"
-                                    />
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">Shipping Address</h3>
+                                {session && profile?.savedAddresses?.length > 0 && (
+                                    <button
+                                        onClick={() => setAddressError('') || (!address.street ? null : setAddress({ name: '', street: '', city: '', zip: '', phone: '' }))}
+                                        className="text-xs text-primary font-bold hover:underline uppercase tracking-widest"
+                                    >
+                                        {address.street ? 'Add New Address' : 'Select Saved'}
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Saved Addresses List */}
+                            {session && profile?.savedAddresses?.length > 0 && !address.street && (
+                                <div className="space-y-4 mb-8">
+                                    {profile.savedAddresses.map((addr) => (
+                                        <div
+                                            key={addr._id}
+                                            onClick={() => setAddress({
+                                                name: addr.name,
+                                                street: addr.street,
+                                                city: addr.city,
+                                                zip: addr.zip,
+                                                phone: addr.phone
+                                            })}
+                                            className={`p-4 border rounded cursor-pointer transition-all hover:border-primary ${address.street === addr.street ? 'border-primary bg-primary/5' : 'border-gray-100'}`}
+                                        >
+                                            <p className="font-black text-xs uppercase mb-1">{addr.name}</p>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase">{addr.street}, {addr.city}-{addr.zip}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold">MOBILE: {addr.phone}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Street Address</label>
-                                    <input
-                                        type="text"
-                                        value={address.street}
-                                        onChange={(e) => setAddress({ ...address, street: e.target.value })}
-                                        className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                        placeholder="123 Main St, Apt 4B"
-                                    />
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">City</label>
+                            )}
+
+                            {(!profile?.savedAddresses?.length || address.street || !session) && (
+                                <form onSubmit={handleAddressSubmit} className="space-y-6 max-w-lg">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Full Name</label>
                                         <input
                                             type="text"
-                                            value={address.city}
-                                            onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                                            value={address.name}
+                                            onChange={(e) => setAddress({ ...address, name: e.target.value })}
                                             className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                            placeholder="New York"
+                                            placeholder="John Doe"
                                         />
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Zip Code</label>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Street Address</label>
                                         <input
                                             type="text"
-                                            value={address.zip}
-                                            onChange={(e) => setAddress({ ...address, zip: e.target.value })}
+                                            value={address.street}
+                                            onChange={(e) => setAddress({ ...address, street: e.target.value })}
                                             className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                            placeholder="10001"
+                                            placeholder="123 Main St, Apt 4B"
                                         />
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Phone Number</label>
-                                    <input
-                                        type="tel"
-                                        value={address.phone}
-                                        onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                                        className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                        placeholder="+1 (555) 000-0000"
-                                    />
-                                </div>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">City</label>
+                                            <input
+                                                type="text"
+                                                value={address.city}
+                                                onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                                                className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                                                placeholder="New York"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Zip Code</label>
+                                            <input
+                                                type="text"
+                                                value={address.zip}
+                                                onChange={(e) => setAddress({ ...address, zip: e.target.value })}
+                                                className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                                                placeholder="10001"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            value={address.phone}
+                                            onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                                            className="w-full border border-gray-200 p-3 rounded text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                                            placeholder="+1 (555) 000-0000"
+                                        />
+                                    </div>
 
-                                {addressError && <p className="text-red-500 text-xs font-bold">{addressError}</p>}
+                                    {addressError && <p className="text-red-500 text-xs font-bold">{addressError}</p>}
+                                </form>
+                            )}
 
+                            {address.street && (
                                 <button
-                                    type="submit"
-                                    className="w-full bg-primary text-white py-4 font-black uppercase tracking-widest rounded hover:bg-primary-hover transition-colors"
+                                    onClick={() => setStep(3)}
+                                    className="w-full bg-primary text-white py-4 font-black uppercase tracking-widest rounded hover:bg-primary-hover transition-colors mt-8"
                                 >
-                                    Proceed to Payment
+                                    Deliver to this Address
                                 </button>
-                            </form>
+                            )}
                         </motion.div>
                     )}
 
@@ -296,10 +393,10 @@ const CheckoutPage = () => {
                 {/* Right Section: Price Summary */}
                 <div className="lg:w-1/3">
                     <div className="sticky top-44">
-                        <h3 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6">Order Summary ({cartCount} Items)</h3>
+                        <h3 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6">Order Summary ({itemsCount} Items)</h3>
 
                         <div className="space-y-4 text-sm text-gray-700 mb-8 max-h-48 overflow-y-auto pr-2 no-scrollbar">
-                            {cart.map(item => (
+                            {checkoutItems.map(item => (
                                 <div key={item.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                                     <div className="flex items-center space-x-3">
                                         <img src={item.thumbnail} className="w-10 h-10 object-contain" />
@@ -320,8 +417,17 @@ const CheckoutPage = () => {
                             </div>
                             <div className="flex justify-between font-medium text-green-600">
                                 <span>Discount on MRP</span>
-                                <span>-${(totalMRP - totalAmount).toFixed(2)}</span>
+                                <span>-${discountAmount.toFixed(2)}</span>
                             </div>
+                            {isCouponEligible && (
+                                <div className="flex justify-between font-bold text-primary">
+                                    <span className="flex items-center space-x-1">
+                                        <BsLightningCharge />
+                                        <span>Auto Coupon (10% OFF)</span>
+                                    </span>
+                                    <span>-${couponDiscount.toFixed(2)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between font-medium">
                                 <span>Shipping Fee</span>
                                 <span className="text-green-600 font-bold uppercase text-[10px]">Free</span>

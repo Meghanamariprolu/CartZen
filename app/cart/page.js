@@ -3,15 +3,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
-import { BsTrash, BsShieldCheck, BsTruck, BsPlus, BsDash } from 'react-icons/bs';
+import { BsTrash, BsShieldCheck, BsTruck, BsPlus, BsDash, BsLightningCharge } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const BagPage = () => {
   const { cart, removeFromCart, updateQuantity, cartCount } = useCart();
 
+  const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   const totalMRP = cart.reduce((total, item) => total + (item.price * 1.5 * item.quantity), 0);
-  const totalDiscount = totalMRP - (cart.reduce((total, item) => total + (item.price * item.quantity), 0));
-  const totalAmount = totalMRP - totalDiscount;
+  const discountMRP = totalMRP - subtotal;
+  const isCouponEligible = subtotal > 50;
+  const couponDiscount = isCouponEligible ? subtotal * 0.1 : 0;
+  const totalAmount = subtotal - couponDiscount;
 
   if (cart.length === 0) {
     return (
@@ -119,12 +122,22 @@ const BagPage = () => {
               </div>
               <div className="flex justify-between text-green-600">
                 <span>Discount on MRP</span>
-                <span>-${totalDiscount.toFixed(2)}</span>
+                <span>-${discountMRP.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Coupon Discount</span>
-                <span className="text-primary font-bold cursor-pointer">Apply Coupon</span>
-              </div>
+              {isCouponEligible ? (
+                <div className="flex justify-between font-bold text-primary">
+                  <span className="flex items-center space-x-1">
+                    <BsLightningCharge className="text-orange-400" />
+                    <span>Auto Coupon (10% OFF)</span>
+                  </span>
+                  <span>-${couponDiscount.toFixed(2)}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span>Coupon Discount</span>
+                  <span className="text-primary font-bold cursor-pointer">Apply Coupon</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Shipping Fee</span>
                 <span className="text-green-600 font-bold uppercase text-[10px]">Free</span>

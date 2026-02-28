@@ -32,7 +32,7 @@ const HomePage = () => {
 
   const categories = [
     { name: 'Men', image: '/e7.jpg', slug: 'mens-shirts' },
-    { name: 'Women', image: '/e8.jpg', slug: 'womens-dresses' },
+    { name: 'Women', image: '/e1.jpg', slug: 'womens-dresses' },
     { name: 'Beauty', image: '/e9.jpg', slug: 'beauty' },
     { name: 'Watches', image: '/e6.jpg', slug: 'mens-watches' },
     { name: 'Furniture', image: '/e10.jpg', slug: 'furniture' },

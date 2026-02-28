@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3005](http://localhost:3005) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
@@ -33,4 +33,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Troubleshooting: "Request Header Fields Too Large" (HTTP 431)
+
+If you see an **HTTP 431** error when opening `http://localhost:3005`, it is because your browser has stored too many cookies for `localhost`.
+
+### Solution:
+1. **Clear Cookies**:
+   - In Chrome/Edge: Click the lock icon next to the URL -> **Cookies and site data** -> **Manage cookies and site data** -> Click the **Trash icon** for `localhost`.
+   - Alternatively, open the site in an **Incognito/Private window**.
+2. **Use IP Address**:
+   - Access the site via [http://127.0.0.1:3005](http://127.0.0.1:3005) instead of `localhost`.
+
+> [!NOTE]
+> I have already increased the server's header limit and switched to database sessions to prevent this from happening again, but you must clear the *old* cookies once to restore access.

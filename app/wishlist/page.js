@@ -25,7 +25,7 @@ const WishlistPage = () => {
   }
 
   return (
-    <div className="bg-white min-h-screen py-12 px-4">
+    <div className="bg-white min-h-screen pt-32 pb-12 px-4">
       <div className="max-w-screen-xl mx-auto">
         <h1 className="text-xl font-black text-gray-900 uppercase tracking-[0.2em] mb-10 border-b border-gray-100 pb-6">
           My Wishlist <span className="text-gray-400 font-normal ml-2">({wishlist.length} items)</span>
@@ -59,7 +59,7 @@ const WishlistPage = () => {
                   </button>
 
                   <div className="absolute bottom-2 left-2 bg-white/90 px-1.5 py-0.5 rounded-sm text-[9px] font-black flex items-center space-x-1">
-                    <span>{item.rating || '4.0'}</span>
+                    <span>{typeof item.rating === 'object' ? item.rating.rate : (item.rating || '4.0')}</span>
                     <BsStarFill className="text-green-600 text-[7px]" />
                   </div>
                 </div>

@@ -42,22 +42,15 @@ const ShopContent = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get('https://api.escuelajs.co/api/v1/products');
-        // Platzi returns an array directly, not { products: [] }
-        const mappedProducts = res.data.map(item => ({
+        const res = await axios.get('https://dummyjson.com/products?limit=0');
+        const mappedProducts = res.data.products.map(item => ({
           ...item,
-          // Map Platzi 'images' (array of strings) to 'image' and 'thumbnail'
-          // Handle potential broken image URLs or non-array images safely
-          image: (item.images && item.images.length > 0) ? cleanImageUrl(item.images[0]) : 'https://placehold.co/600x400?text=No+Image',
-          thumbnail: (item.images && item.images.length > 0) ? cleanImageUrl(item.images[0]) : 'https://placehold.co/600x400?text=No+Image',
-          // Map Platzi 'category' object to string name if needed, or keep object
-          category: item.category ? item.category.name.toLowerCase() : 'uncategorized',
-          // Ensure rating exists (Platzi doesn't have ratings, so mock it)
-          rating: (Math.random() * 2 + 3).toFixed(1), // Random 3.0 - 5.0
-          // Ensure discount exists
-          discountPercentage: Math.floor(Math.random() * 30),
-          // Brand is not in Platzi, mock it or use Category
-          brand: item.category ? item.category.name : 'Generic'
+          image: item.thumbnail || (item.images?.length > 0 ? item.images[0] : 'https://placehold.co/600x400?text=No+Image'),
+          thumbnail: item.thumbnail || (item.images?.length > 0 ? item.images[0] : 'https://placehold.co/600x400?text=No+Image'),
+          category: item.category ? item.category.toLowerCase() : 'uncategorized',
+          rating: item.rating ? item.rating.toFixed(1) : (Math.random() * 2 + 3).toFixed(1),
+          discountPercentage: item.discountPercentage || 0,
+          brand: item.brand || (item.category ? item.category : 'Generic')
         }));
         setProducts(mappedProducts);
         setLoading(false);
@@ -68,19 +61,6 @@ const ShopContent = () => {
     };
     fetchProducts();
   }, []);
-
-  // Helper to clean Platzi image URLs which sometimes have brackets/quotes
-  const cleanImageUrl = (url) => {
-    if (!url) return 'https://placehold.co/600x400?text=No+Image';
-    let cleaned = url.replace(/[\[\]"]/g, '');
-    // sometimes it's stringified json
-    try {
-      if (cleaned.startsWith('http')) return cleaned;
-      return JSON.parse(url);
-    } catch (e) {
-      return cleaned;
-    }
-  };
 
   useEffect(() => {
     let result = [...products];
@@ -239,7 +219,7 @@ const ShopContent = () => {
                       />
 
                       {/* Overlay Actions */}
-                      <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform bg-white/95">
+                      <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform bg-white/95 z-10">
                         <button
                           onClick={() => addToCart(product)}
                           className="w-full border border-gray-200 text-gray-900 text-[11px] font-black py-2.5 uppercase tracking-widest hover:border-primary hover:text-primary transition-colors"
@@ -251,7 +231,7 @@ const ShopContent = () => {
                       {/* Wishlist Icon */}
                       <button
                         onClick={() => toggleWishlist(product)}
-                        className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full myntra-shadow hover:bg-white transition-all transform hover:scale-110"
+                        className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full myntra-shadow hover:bg-white transition-all transform hover:scale-110 z-10"
                       >
                         {wishlist.some(item => item.id === product.id) ? (
                           <BsHeartFill className="text-primary text-sm" />

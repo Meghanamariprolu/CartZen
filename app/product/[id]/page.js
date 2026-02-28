@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BsHeart, BsHeartFill, BsStarFill, BsBag, BsShieldCheck, BsArrowLeftRight, BsCamera } from 'react-icons/bs';
+import { BsHeart, BsHeartFill, BsStarFill, BsShieldCheck, BsArrowLeftRight, BsCamera, BsBagFill, BsFillLightningFill } from 'react-icons/bs';
 import UnifiedTryOn from '../../components/TryOn/UnifiedTryOn';
 import { useCart } from '../../context/CartContext';
 import Link from 'next/link';
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const router = useRouter();
   const { addToCart, toggleWishlist, wishlist } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,27 +50,19 @@ const ProductDetails = () => {
     if (id) {
       const fetchProduct = async () => {
         try {
-          const response = await axios.get(`https://api.escuelajs.co/api/v1/products/${id}`);
+          const response = await axios.get(`https://dummyjson.com/products/${id}`);
           const item = response.data;
-
-          // Helper to clean Platzi image URLs
-          const cleanImageUrl = (url) => {
-            if (!url) return 'https://placehold.co/600x400?text=No+Image';
-            let cleaned = url.replace(/[\[\]"]/g, '');
-            try {
-              if (cleaned.startsWith('http')) return cleaned;
-              return JSON.parse(url);
-            } catch (e) {
-              return cleaned;
-            }
-          };
 
           const mappedProduct = {
             ...item,
-            image: (item.images && item.images.length > 0) ? cleanImageUrl(item.images[0]) : 'https://placehold.co/600x400?text=No+Image',
-            images: (item.images || []).map(cleanImageUrl),
-            category: item.category ? item.category.name : 'Uncategorized',
-            rating: { rate: (Math.random() * 2 + 3).toFixed(1), count: Math.floor(Math.random() * 500) } // Mock rating
+            image: item.thumbnail || (item.images?.length > 0 ? item.images[0] : 'https://placehold.co/600x400?text=No+Image'),
+            images: item.images || [],
+            category: item.category ? item.category.toLowerCase() : 'uncategorized',
+            rating: {
+              rate: item.rating ? item.rating.toFixed(1) : (Math.random() * 2 + 3).toFixed(1),
+              count: item.reviews?.length || Math.floor(Math.random() * 500)
+            },
+            brand: item.brand || 'Generic'
           };
 
           setProduct(mappedProduct);
@@ -84,6 +77,10 @@ const ProductDetails = () => {
       fetchProduct();
     }
   }, [id]);
+
+  const handleBuyNow = () => {
+    router.push(`/checkout?direct=true&productId=${id}&qty=1`);
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
@@ -224,22 +221,30 @@ const ProductDetails = () => {
             </AnimatePresence>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <button
                 onClick={() => addToCart(product)}
-                className="flex-1 bg-primary text-white py-4 rounded font-bold uppercase tracking-widest flex items-center justify-center space-x-3 hover:bg-primary-hover transition-colors"
+                className="flex-grow bg-primary text-white py-4 px-8 rounded font-bold uppercase tracking-widest hover:bg-primary-hover transition-all flex items-center justify-center space-x-3"
               >
-                <BsBag className="text-xl" />
+                <BsBagFill />
                 <span>Add to Bag</span>
               </button>
               <button
-                onClick={() => toggleWishlist(product)}
-                className="flex-1 border border-gray-300 py-4 rounded font-bold uppercase tracking-widest flex items-center justify-center space-x-3 hover:border-gray-900 transition-colors"
+                onClick={handleBuyNow}
+                className="flex-grow border-2 border-primary text-primary py-4 px-8 rounded font-bold uppercase tracking-widest hover:bg-primary/5 transition-all flex items-center justify-center space-x-3"
               >
-                {isInWishlist ? <BsHeartFill className="text-primary text-xl" /> : <BsHeart className="text-xl" />}
-                <span>{isInWishlist ? 'Wishlisted' : 'Wishlist'}</span>
+                <BsFillLightningFill className="text-xl" />
+                <span>Buy Now</span>
               </button>
             </div>
+
+            <button
+              onClick={() => toggleWishlist(product)}
+              className="w-full border border-gray-200 py-3 rounded font-bold uppercase tracking-widest flex items-center justify-center space-x-3 hover:border-gray-900 transition-colors mb-8 text-xs"
+            >
+              {isInWishlist ? <BsHeartFill className="text-primary" /> : <BsHeart />}
+              <span>{isInWishlist ? 'Wishlisted' : 'Add to Wishlist'}</span>
+            </button>
 
             <UnifiedTryOn isOpen={isAROpen} onClose={() => setIsAROpen(false)} product={product} />
 

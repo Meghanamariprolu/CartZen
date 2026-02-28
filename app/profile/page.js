@@ -2,51 +2,118 @@
 
 import React, { useState, useEffect } from 'react';
 import { BsPerson, BsEnvelope, BsPhone, BsGeoAlt, BsPencilSquare, BsCheckCircleFill, BsCamera } from 'react-icons/bs';
-
-import { motion } from 'framer-motion';
+import { useSession } from 'next-auth/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 
 const ProfilePage = () => {
+    const { data: session, update } = useSession();
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState({
-        name: 'Meghana',
-        email: 'meghana@example.com',
-        phone: '+91 99999 88888',
-        address: '123 E-commerce Lane, Tech Park, Hyderabad, India',
-        image: null // Add image field
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        image: null
     });
     const [tempProfile, setTempProfile] = useState({ ...profile });
     const fileInputRef = React.useRef(null);
 
     const [showSavedToast, setShowSavedToast] = useState(false);
+    const [showAddressForm, setShowAddressForm] = useState(false);
+    const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', zip: '', phone: '' });
 
     useEffect(() => {
-        const savedProfile = localStorage.getItem('user_profile');
-        if (savedProfile) {
-            const parsed = JSON.parse(savedProfile);
-            setProfile(parsed);
-            setTempProfile(parsed);
+        if (session) {
+            fetchUserProfile();
         }
-    }, []);
+    }, [session]);
 
-    const handleSave = () => {
-        setProfile(tempProfile);
-        localStorage.setItem('user_profile', JSON.stringify(tempProfile));
-        setIsEditing(false);
-        setShowSavedToast(true);
-        setTimeout(() => setShowSavedToast(false), 3000);
+    const fetchUserProfile = async () => {
+        try {
+            const res = await axios.get('/api/user/profile');
+            setProfile(res.data);
+            setTempProfile(res.data);
+        } catch (err) {
+            console.error("Failed to fetch profile:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            await axios.put('/api/user/profile', tempProfile);
+            setProfile(tempProfile);
+            // Update the next-auth session client-side
+            await update({ name: tempProfile.name, image: tempProfile.image });
+            setIsEditing(false);
+            setShowSavedToast(true);
+            setTimeout(() => setShowSavedToast(false), 3000);
+        } catch (err) {
+            console.error("Failed to save profile:", err);
+        }
+    };
+
+    const handleAddAddress = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await axios.put('/api/user/profile', {
+                action: 'addAddress',
+                address: { ...newAddress, isDefault: profile.savedAddresses.length === 0 }
+            });
+            setProfile(res.data.user);
+            setNewAddress({ name: '', street: '', city: '', zip: '', phone: '' });
+            setShowAddressForm(false);
+        } catch (err) {
+            console.error("Failed to add address:", err);
+        }
+    };
+
+    const handleRemoveAddress = async (addressId) => {
+        try {
+            const res = await axios.put('/api/user/profile', {
+                action: 'removeAddress',
+                addressId
+            });
+            setProfile(res.data.user);
+        } catch (err) {
+            console.error("Failed to remove address:", err);
+        }
+    };
+
+    const handleSetDefault = async (addressId) => {
+        try {
+            const res = await axios.put('/api/user/profile', {
+                action: 'setDefaultAddress',
+                addressId
+            });
+            setProfile(res.data.user);
+        } catch (err) {
+            console.error("Failed to set default address:", err);
+        }
     };
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
                 const base64String = reader.result;
-                // Update both profile and tempProfile to show immediately and persist
-                const updatedProfile = { ...profile, image: base64String };
-                setProfile(updatedProfile);
-                setTempProfile(updatedProfile);
-                localStorage.setItem('user_profile', JSON.stringify(updatedProfile));
+                const newProfile = { ...profile, image: base64String };
+                setTempProfile(newProfile);
+                setProfile(newProfile); // Show preview immediately
+
+                try {
+                    // Auto-save the image to backend
+                    await axios.put('/api/user/profile', newProfile);
+                    await update({ image: base64String });
+                    setShowSavedToast(true);
+                    setTimeout(() => setShowSavedToast(false), 3000);
+                } catch (err) {
+                    console.error("Failed to save image:", err);
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -58,7 +125,7 @@ const ProfilePage = () => {
             <div className="max-w-screen-md mx-auto">
                 <h1 className="text-2xl font-black text-gray-900 uppercase tracking-widest mb-8 text-center md:text-left border-b border-gray-200 pb-4">Account Details</h1>
 
-                <div className="bg-white rounded shadow-sm overflow-hidden">
+                <div className="bg-white rounded shadow-sm overflow-hidden mb-8">
                     {/* Header/Cover aspect */}
                     <div className="h-32 bg-gradient-to-r from-primary to-purple-600"></div>
 
@@ -91,7 +158,7 @@ const ProfilePage = () => {
 
                         <div className="mt-20 flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
                             <div>
-                                <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">{profile.name}</h2>
+                                <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">{profile.name || 'Member'}</h2>
                                 <p className="text-gray-500 font-bold text-sm tracking-widest uppercase">Platinum Member</p>
                             </div>
                             <button
@@ -127,16 +194,7 @@ const ProfilePage = () => {
                                     <div className="p-3 bg-gray-50 rounded-full text-gray-400 mt-1"><BsEnvelope /></div>
                                     <div className="flex-grow">
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Email ID</label>
-                                        {isEditing ? (
-                                            <input
-                                                type="email"
-                                                className="w-full border-b border-gray-200 focus:border-primary focus:ring-0 text-sm font-bold p-0 pb-1 outline-none"
-                                                value={tempProfile.email}
-                                                onChange={(e) => setTempProfile({ ...tempProfile, email: e.target.value })}
-                                            />
-                                        ) : (
-                                            <p className="text-gray-900 font-bold text-sm">{profile.email}</p>
-                                        )}
+                                        <p className="text-gray-900 font-bold text-sm">{profile.email}</p>
                                     </div>
                                 </div>
                             </div>
@@ -155,7 +213,7 @@ const ProfilePage = () => {
                                                 onChange={(e) => setTempProfile({ ...tempProfile, phone: e.target.value })}
                                             />
                                         ) : (
-                                            <p className="text-gray-900 font-bold text-sm">{profile.phone}</p>
+                                            <p className="text-gray-900 font-bold text-sm">{profile.phone || 'Not provided'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -196,6 +254,103 @@ const ProfilePage = () => {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Whishlist</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Address Book Section */}
+                <div className="bg-white rounded shadow-sm p-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Address Book</h3>
+                        <button
+                            onClick={() => setShowAddressForm(!showAddressForm)}
+                            className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
+                        >
+                            {showAddressForm ? 'Cancel' : '+ Add New Address'}
+                        </button>
+                    </div>
+
+                    <AnimatePresence>
+                        {showAddressForm && (
+                            <motion.form
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                onSubmit={handleAddAddress}
+                                className="mb-8 p-6 bg-gray-50 rounded-sm space-y-4"
+                            >
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Receiver Name"
+                                        required
+                                        className="w-full border border-gray-200 p-2 text-sm font-bold outline-none focus:border-primary"
+                                        value={newAddress.name}
+                                        onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Phone Number"
+                                        required
+                                        className="w-full border border-gray-200 p-2 text-sm font-bold outline-none focus:border-primary"
+                                        value={newAddress.phone}
+                                        onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                                    />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Street / Locality"
+                                    required
+                                    className="w-full border border-gray-200 p-2 text-sm font-bold outline-none focus:border-primary"
+                                    value={newAddress.street}
+                                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="City"
+                                        required
+                                        className="w-full border border-gray-200 p-2 text-sm font-bold outline-none focus:border-primary"
+                                        value={newAddress.city}
+                                        onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Zip Code"
+                                        required
+                                        className="w-full border border-gray-200 p-2 text-sm font-bold outline-none focus:border-primary"
+                                        value={newAddress.zip}
+                                        onChange={(e) => setNewAddress({ ...newAddress, zip: e.target.value })}
+                                    />
+                                </div>
+                                <button type="submit" className="w-full bg-primary text-white py-3 font-black uppercase text-xs tracking-widest rounded-sm">Save Address</button>
+                            </motion.form>
+                        )}
+                    </AnimatePresence>
+
+                    <div className="space-y-4">
+                        {profile.savedAddresses?.map((addr) => (
+                            <div key={addr._id} className={`p-4 border rounded flex justify-between items-start ${addr.isDefault ? 'border-primary bg-primary/5' : 'border-gray-100'}`}>
+                                <div>
+                                    <div className="flex items-center space-x-2 mb-1">
+                                        <p className="font-black text-sm uppercase">{addr.name}</p>
+                                        {addr.isDefault && <span className="text-[8px] font-black bg-primary text-white px-2 py-0.5 rounded-full uppercase">Default</span>}
+                                    </div>
+                                    <p className="text-xs text-gray-500 font-bold uppercase">{addr.street}</p>
+                                    <p className="text-xs text-gray-500 font-bold uppercase">{addr.city}, {addr.zip}</p>
+                                    <p className="text-[10px] text-gray-400 font-bold mt-2">MOBILE: {addr.phone}</p>
+                                </div>
+                                <div className="flex flex-col space-y-2 text-right">
+                                    {!addr.isDefault && (
+                                        <button onClick={() => handleSetDefault(addr._id)} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Set as Default</button>
+                                    )}
+                                    <button onClick={() => handleRemoveAddress(addr._id)} className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Remove</button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {(!profile.savedAddresses || profile.savedAddresses.length === 0) && (
+                            <p className="text-center py-10 text-gray-400 font-bold text-sm">No saved addresses yet.</p>
+                        )}
                     </div>
                 </div>
             </div>

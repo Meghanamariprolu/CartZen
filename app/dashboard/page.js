@@ -2,24 +2,39 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BsArrowUpRight, BsArrowDownRight, BsBagCheck, BsPeople, BsCurrencyDollar, BsCartX, BsGraphUp } from 'react-icons/bs';
+import { BsArrowUpRight, BsArrowDownRight, BsBagCheck, BsPeople, BsCurrencyDollar, BsGraphUp, BsChatDots } from 'react-icons/bs';
 
 const Dashboard = () => {
-    // Mock Data for Visuals
-    const stats = [
-        { label: 'Total Sales', value: '$84,232', change: '+12.5%', isUp: true, icon: <BsCurrencyDollar /> },
-        { label: 'Orders', value: '1,240', change: '+8.2%', isUp: true, icon: <BsBagCheck /> },
-        { label: 'Conversion', value: '3.2%', change: '-0.4%', isUp: false, icon: <BsGraphUp /> },
-        { label: 'Active Users', value: '8,432', change: '+14.1%', isUp: true, icon: <BsPeople /> },
-    ];
+    const [data, setData] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
 
-    const salesData = [30, 45, 35, 60, 55, 80, 75, 90, 85, 100, 95, 110];
-    const categoryData = [
-        { name: 'Watches', value: 40, color: '#ff3f6c' },
-        { name: 'Home', value: 25, color: '#14cda8' },
-        { name: 'Gadgets', value: 20, color: '#3e4152' },
-        { name: 'Others', value: 15, color: '#7e818c' },
-    ];
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                const json = await res.json();
+                setData(json);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    if (loading) return <div className="min-h-screen flex items-center justify-center font-black uppercase tracking-widest text-primary italic">Loading Dashboard...</div>;
+    if (!data) return null;
+
+    const { stats, revenueGrowth, recentActivity } = data;
+
+    const iconMap = {
+        dollar: <BsCurrencyDollar />,
+        bag: <BsBagCheck />,
+        chat: <BsChatDots />,
+        people: <BsPeople />,
+        graph: <BsGraphUp />
+    };
 
     return (
         <div className="bg-[#f5f5f6] min-h-screen pt-24 pb-12 px-4">
@@ -41,7 +56,7 @@ const Dashboard = () => {
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-gray-50 rounded-full text-primary text-xl">
-                                    {stat.icon}
+                                    {iconMap[stat.icon]}
                                 </div>
                                 <div className={`flex items-center space-x-1 text-xs font-black ${stat.isUp ? 'text-green-500' : 'text-red-500'}`}>
                                     <span>{stat.change}</span>
@@ -80,14 +95,14 @@ const Dashboard = () => {
                                     </linearGradient>
                                 </defs>
                                 <path
-                                    d={`M 0 256 ${salesData.map((d, i) => `L ${(i / (salesData.length - 1)) * 100}% ${256 - d * 2}`).join(' ')} L 100% 256 Z`}
+                                    d={`M 0 256 ${revenueGrowth.map((d, i) => `L ${(i / (revenueGrowth.length - 1)) * 100}% ${256 - d * 2}`).join(' ')} L 100% 256 Z`}
                                     fill="url(#gradient)"
                                 />
                                 <motion.path
                                     initial={{ pathLength: 0 }}
                                     animate={{ pathLength: 1 }}
                                     transition={{ duration: 1.5, ease: "easeInOut" }}
-                                    d={`M 0 ${256 - salesData[0] * 2} ${salesData.slice(1).map((d, i) => `L ${((i + 1) / (salesData.length - 1)) * 100}% ${256 - d * 2}`).join(' ')}`}
+                                    d={`M 0 ${256 - revenueGrowth[0] * 2} ${revenueGrowth.slice(1).map((d, i) => `L ${((i + 1) / (revenueGrowth.length - 1)) * 100}% ${256 - d * 2}`).join(' ')}`}
                                     fill="none"
                                     stroke="#ff3f6c"
                                     strokeWidth="4"
@@ -115,28 +130,12 @@ const Dashboard = () => {
                     >
                         <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-10 text-center">Top Categories</h2>
 
+                        {/* Static Data for Chart visualization */}
                         <div className="relative w-48 h-48 mx-auto mb-10">
                             <svg className="w-full h-full transform -rotate-90">
-                                {categoryData.reduce((acc, cat, idx) => {
-                                    const prevValue = acc.total;
-                                    const circumference = 2 * Math.PI * 40;
-                                    const offset = (prevValue / 100) * circumference;
-                                    const strokeDasharray = `${(cat.value / 100) * circumference} ${circumference}`;
-                                    acc.total += cat.value;
-                                    acc.elements.push(
-                                        <circle
-                                            key={idx}
-                                            cx="50%" cy="50%" r="40%"
-                                            fill="none"
-                                            stroke={cat.color}
-                                            strokeWidth="20"
-                                            strokeDasharray={strokeDasharray}
-                                            strokeDashoffset={-offset}
-                                            className="transition-all duration-1000"
-                                        />
-                                    );
-                                    return acc;
-                                }, { total: 0, elements: [] }).elements}
+                                <circle cx="50%" cy="50%" r="40%" fill="none" stroke="#ff3f6c" strokeWidth="20" strokeDasharray="160 251" />
+                                <circle cx="50%" cy="50%" r="40%" fill="none" stroke="#14cda8" strokeWidth="20" strokeDasharray="50 251" strokeDashoffset="-160" />
+                                <circle cx="50%" cy="50%" r="40%" fill="none" stroke="#3e4152" strokeWidth="20" strokeDasharray="41 251" strokeDashoffset="-210" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-2xl font-black text-gray-900">100%</span>
@@ -145,7 +144,11 @@ const Dashboard = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {categoryData.map((cat, idx) => (
+                            {[
+                                { name: 'Smartphones', value: 65, color: '#ff3f6c' },
+                                { name: 'Beauty', value: 20, color: '#14cda8' },
+                                { name: 'Others', value: 15, color: '#3e4152' },
+                            ].map((cat, idx) => (
                                 <div key={idx} className="flex justify-between items-center">
                                     <div className="flex items-center space-x-3">
                                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></span>
@@ -158,7 +161,7 @@ const Dashboard = () => {
                     </motion.div>
                 </div>
 
-                {/* Recent Activity / Low Inventory Table */}
+                {/* Recent Activity Table */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -178,12 +181,7 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="text-sm">
-                            {[
-                                { name: 'Premium Leather Watch', cat: 'Watches', stock: 5, loss: '$420' },
-                                { name: 'Eco-flow Wall Decor', cat: 'Home', stock: 2, loss: '$140' },
-                                { name: 'Smart Chronograph X', cat: 'Watches', stock: 8, loss: '$1200' },
-                                { name: 'Rustic Vase Set', cat: 'Home', stock: 12, loss: '$60' },
-                            ].map((row, idx) => (
+                            {(recentActivity || []).map((row, idx) => (
                                 <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                                     <td className="py-4 font-bold text-gray-900">{row.name}</td>
                                     <td className="py-4 text-gray-500 font-medium">{row.cat}</td>
