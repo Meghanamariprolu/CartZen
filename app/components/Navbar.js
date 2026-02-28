@@ -15,6 +15,21 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const closeTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const handleCameraClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log('Image uploaded for search:', file.name);
+      // In a real app, you'd upload this to a server for visual search
+    }
+  };
 
   const handleProfileEnter = () => {
     if (closeTimeoutRef.current) {
