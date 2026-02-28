@@ -25,6 +25,8 @@ async function dbConnect() {
     if (!cached.promise) {
         const opts = {
             bufferCommands: false,
+            connectTimeoutMS: 10000, // 10s timeout
+            serverSelectionTimeoutMS: 10000,
         };
 
         cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
@@ -36,6 +38,7 @@ async function dbConnect() {
     try {
         cached.conn = await cached.promise;
     } catch (e) {
+        console.error('=> MongoDB Connection Error:', e.message);
         cached.promise = null;
         throw e;
     }
@@ -46,7 +49,10 @@ async function dbConnect() {
 /**
  * MongoDB Client setup for NextAuth adapter
  */
-const options = {};
+const options = {
+    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 10000,
+};
 let client;
 let clientPromise;
 

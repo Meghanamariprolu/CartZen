@@ -17,7 +17,13 @@ const handler = NextAuth({
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                await dbConnect();
+                console.log("NextAuth: Starting authorize for", credentials?.email);
+                try {
+                    await dbConnect();
+                } catch (dbError) {
+                    console.error("NextAuth: Database connection failed in authorize:", dbError);
+                    throw new Error("Database connection error");
+                }
 
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("Please enter an email and password");
@@ -83,6 +89,11 @@ const handler = NextAuth({
         signIn: '/login',
     },
     secret: process.env.NEXTAUTH_SECRET,
+    debug: process.env.NODE_ENV === 'development' || true, // Force true for debugging on Vercel
 });
+
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production') {
+    console.error("CRITICAL: NEXTAUTH_SECRET is not defined in production!");
+}
 
 export { handler as GET, handler as POST };
