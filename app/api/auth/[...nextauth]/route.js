@@ -5,7 +5,7 @@ import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import dbConnect, { clientPromise } from "@/lib/mongodb";
-import User from "../../../models/User";
+import User from "@/models/User";
 
 const handler = NextAuth({
     adapter: MongoDBAdapter(clientPromise),
