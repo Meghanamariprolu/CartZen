@@ -1,4 +1,4 @@
-import dbConnect from '../../../lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import Order from '../../../models/Order';
 import User from '../../../models/User';
 import Message from '../../../models/Message';

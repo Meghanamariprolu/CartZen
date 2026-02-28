@@ -1,4 +1,4 @@
-import dbConnect from '../../lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import Message from '../../models/Message';
 import { NextResponse } from 'next/server';
 
