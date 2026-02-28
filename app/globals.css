@@ -58,3 +58,13 @@ body {
 .btn-primary:hover {
   background-color: var(--primary-hover);
 }
+
+.logo-gradient {
+  background: linear-gradient(to right, #a855f7, #ec4899, #ef4444);
+  /* Purple to Pink to Red */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}

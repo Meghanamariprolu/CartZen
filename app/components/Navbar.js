@@ -53,13 +53,13 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className="bg-primary border-b border-primary-hover fixed w-full top-0 left-0 z-50 h-20 flex items-center shadow-lg">
+    <nav className="bg-[#131826] border-b border-gray-800 fixed w-full top-0 left-0 z-50 h-20 flex items-center shadow-lg">
       <div className="max-w-screen-xl mx-auto px-4 w-full flex justify-between items-center h-full">
         {/* Logo Section */}
         <div className="flex items-center">
           <Link href="/">
-            <span className="text-2xl font-black tracking-tighter text-white cursor-pointer italic">
-              CART<span className="text-white/80 NOT-italic">ZEN</span>
+            <span className="text-2xl font-black tracking-tighter cursor-pointer bg-gradient-to-r from-fuchsia-600 via-blue-500 to-cyan-400 bg-clip-text text-transparent inline-block">
+              <span className="italic">CART</span><span className="NOT-italic">ZEN</span>
             </span>
           </Link>
         </div>

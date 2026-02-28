@@ -67,7 +67,12 @@ const Footer = () => {
                 </div>
             </div>
             <div className="max-w-screen-xl mx-auto px-4 mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500">
-                <p>&copy; 2026 CartZen. All Rights Reserved.</p>
+                <div className="flex items-center space-x-2">
+                    <span className="text-xl font-black tracking-tighter bg-gradient-to-r from-fuchsia-600 via-blue-500 to-cyan-400 bg-clip-text text-transparent inline-block">
+                        <span className="italic">CART</span><span className="NOT-italic">ZEN</span>
+                    </span>
+                    <p>&copy; 2026. All Rights Reserved.</p>
+                </div>
                 <p className="mt-4 md:mt-0 italic font-bold">Made with ❤️ by Meghana</p>
             </div>
         </footer>

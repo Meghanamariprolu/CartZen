@@ -120,8 +120,8 @@ const LoginPage = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <Link href="/">
-                    <h1 className="text-center text-3xl font-black text-gray-900 italic tracking-tighter">
-                        CART<span className="text-primary NOT-italic">ZEN</span>
+                    <h1 className="text-center text-3xl font-black tracking-tighter bg-gradient-to-r from-fuchsia-600 via-blue-500 to-cyan-400 bg-clip-text text-transparent inline-block w-full">
+                        <span className="italic">CART</span><span className="NOT-italic">ZEN</span>
                     </h1>
                 </Link>
                 <h2 className="mt-6 text-center text-xl font-black text-gray-900 uppercase tracking-widest">
