@@ -8,7 +8,34 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import FeaturedProductsGrid from './components/FeaturedProductsGrid';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
 const HomePage = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Handle automatic redirection based on auth state
+  React.useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Fallback return null if redirecting
+  if (status !== 'authenticated' && status !== 'loading') {
+    return null;
+  }
   // Hero Carousel Settings
   const heroSettings = {
     dots: true,
