@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useCart } from '../context/CartContext';
@@ -20,6 +21,7 @@ const CheckoutContent = () => {
     const [paymentMethod, setPaymentMethod] = useState('card');
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [profile, setProfile] = useState(null);
 
     // Direct Purchase State
     const [directItem, setDirectItem] = useState(null);
@@ -61,6 +63,7 @@ const CheckoutContent = () => {
         try {
             const res = await axios.get('/api/user/profile');
             const data = res.data;
+            setProfile(data);
             if (data.address) {
                 setAddress({
                     name: data.name || '',
