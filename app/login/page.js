@@ -74,7 +74,12 @@ const LoginPage = () => {
             });
 
             if (res.error) {
-                setError(res.error);
+                // If it's a specific auth error, show a better message
+                if (res.error === 'CredentialsSignin') {
+                    setError('Invalid email or password');
+                } else {
+                    setError(res.error || 'Login failed. Please check your connection.');
+                }
                 setLoading(false);
             } else {
                 setSuccess('Logged in successfully! Redirecting...');
