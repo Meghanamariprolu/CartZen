@@ -3,10 +3,6 @@ import { MongoClient } from 'mongodb';
 
 const MONGO_URI = process.env.MONGO_URI;
 
-if (!MONGO_URI) {
-    throw new Error('Please define the MONGO_URI environment variable inside .env.local');
-}
-
 /**
  * Mongoose setup for models
  */
@@ -19,6 +15,11 @@ if (!cached) {
 async function dbConnect() {
     if (cached.conn) {
         return cached.conn;
+    }
+
+    if (!MONGO_URI) {
+        console.warn('MONGO_URI is not defined. Skipping database connection (expected during build).');
+        return null;
     }
 
     if (!cached.promise) {
@@ -49,15 +50,21 @@ const options = {};
 let client;
 let clientPromise;
 
-if (process.env.NODE_ENV === 'development') {
-    if (!global._mongoClientPromise) {
-        client = new MongoClient(MONGO_URI, options);
-        global._mongoClientPromise = client.connect();
-    }
-    clientPromise = global._mongoClientPromise;
+if (!MONGO_URI) {
+    // Fallback for build phase to prevent crash
+    console.warn('MONGO_URI is not defined. Using mock client promise for build phase.');
+    clientPromise = Promise.resolve(null);
 } else {
-    client = new MongoClient(MONGO_URI, options);
-    clientPromise = client.connect();
+    if (process.env.NODE_ENV === 'development') {
+        if (!global._mongoClientPromise) {
+            client = new MongoClient(MONGO_URI, options);
+            global._mongoClientPromise = client.connect();
+        }
+        clientPromise = global._mongoClientPromise;
+    } else {
+        client = new MongoClient(MONGO_URI, options);
+        clientPromise = client.connect();
+    }
 }
 
 export { clientPromise };
