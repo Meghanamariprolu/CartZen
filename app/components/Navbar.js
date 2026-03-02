@@ -53,7 +53,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className="bg-[#131826] border-b border-gray-800 fixed w-full top-0 left-0 z-50 h-20 flex items-center shadow-lg">
+    <nav className="bg-[#0a0f1d] border-b border-gray-800 fixed w-full top-0 left-0 z-50 h-20 flex items-center shadow-lg">
       <div className="max-w-screen-xl mx-auto px-4 w-full flex justify-between items-center h-full">
         {/* Logo Section */}
         <div className="flex items-center">
@@ -120,9 +120,11 @@ const Navbar = () => {
                 {session?.user?.image ? (
                   <img src={session.user.image} alt="Profile" className="w-6 h-6 rounded-full object-cover border border-white/20 group-hover:border-white" />
                 ) : (
-                  <BsPerson className="text-xl text-white group-hover:text-white/80" />
+                  <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">
+                    <BsPerson className="text-sm text-white/70 group-hover:text-white" />
+                  </div>
                 )}
-                <span className="text-[10px] font-bold text-white group-hover:text-white/80">
+                <span className="text-[10px] font-bold text-white group-hover:text-white/80 mt-1">
                   {session ? session.user.name.split(' ')[0] : 'Profile'}
                 </span>
               </div>

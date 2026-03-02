@@ -7,7 +7,7 @@ import { BsPatchCheck, BsArrowCounterclockwise } from 'react-icons/bs';
 
 const Footer = () => {
     return (
-        <footer className="bg-[#111827] border-t border-gray-800 pt-16 pb-8 mt-20 text-gray-400">
+        <footer className="bg-[#0a0f1d] border-t border-gray-800 pt-16 pb-8 mt-20 text-gray-400">
             <div className="max-w-screen-xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div>
                     <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Online Shopping</h3>

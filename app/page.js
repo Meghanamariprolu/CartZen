@@ -15,25 +15,6 @@ const HomePage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Handle automatic redirection based on auth state
-  React.useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Fallback return null if redirecting
-  if (status !== 'authenticated' && status !== 'loading') {
-    return null;
-  }
   // Hero Carousel Settings
   const heroSettings = {
     dots: true,
@@ -57,7 +38,7 @@ const HomePage = () => {
 
   const categories = [
     { name: 'Men', image: '/e7.jpg', slug: 'mens-shirts' },
-    { name: 'Women', image: '/e1.jpg', slug: 'womens-dresses' },
+    { name: 'Women', image: '/e5.jpg', slug: 'womens-dresses' },
     { name: 'Beauty', image: '/e9.jpg', slug: 'beauty' },
     { name: 'Watches', image: '/e6.jpg', slug: 'mens-watches' },
     { name: 'Furniture', image: '/e10.jpg', slug: 'furniture' },
