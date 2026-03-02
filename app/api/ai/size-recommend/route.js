@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-
-/**
- * AI Size Recommendation API
- * Returns the best fit size based on user body metrics and product data.
- */
 export async function POST(request) {
     try {
-        await dbConnect();
         const body = await request.json();
         const { product_id, user_measurements } = body;
 

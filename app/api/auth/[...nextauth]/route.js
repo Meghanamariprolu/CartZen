@@ -1,56 +1,52 @@
 import NextAuth from "next-auth";
-import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
-import dbConnect, { clientPromise } from "@/lib/mongodb";
-import User from "@/models/User";
+import { findUserByEmail } from "@/lib/mock-db";
 
 const handler = NextAuth({
-    adapter: MongoDBAdapter(clientPromise),
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "email", placeholder: "meghana@example.com" },
+                email: { label: "Email", type: "email", placeholder: "me@example.com" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                console.log("NextAuth: Starting authorize for", credentials?.email);
-                try {
-                    await dbConnect();
-                } catch (dbError) {
-                    console.error("NextAuth: Database connection failed in authorize:", dbError);
-                    throw new Error("Database connection error");
-                }
+                console.log("NextAuth: Mock Authorize for", credentials?.email);
 
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("Please enter an email and password");
                 }
 
-                const user = await User.findOne({ email: credentials.email });
+                // Use Mock DB instead of Mongoose
+                const user = await findUserByEmail(credentials.email);
 
                 if (!user) {
                     throw new Error("No user found with this email");
                 }
 
-                if (!user.password) {
-                    throw new Error("Please login via OAuth provider (Google/Github)");
-                }
+                // For mock demo, we support plain text password match if not bcrypt-ed
+                // In this mock, we'll try a simple match first
+                const isMatch = credentials.password === user.password;
 
-                const isValid = await bcrypt.compare(credentials.password, user.password);
+                // Fallback to bcrypt if it's a real hashed password in mock
+                let isValid = isMatch;
+                if (!isValid && user.password.startsWith('$2a$')) {
+                    isValid = await bcrypt.compare(credentials.password, user.password);
+                }
 
                 if (!isValid) {
                     throw new Error("Invalid password");
                 }
 
                 return {
-                    id: user._id.toString(),
+                    id: user.id,
                     name: user.name,
                     email: user.email,
                     image: user.image,
-                    role: user.role || 'user' // Hardcoded default just in case
+                    role: user.role || 'user'
                 };
             }
         }),

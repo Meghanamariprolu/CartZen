@@ -1,13 +1,10 @@
-import dbConnect from '@/lib/mongodb';
-import Message from '@/models/Message';
+import { saveMessage } from '@/lib/mock-db';
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
     try {
-        await dbConnect();
         const data = await req.json();
-
-        const newMessage = await Message.create(data);
+        const newMessage = await saveMessage(data);
 
         return NextResponse.json({ success: true, message: newMessage }, { status: 201 });
     } catch (error) {

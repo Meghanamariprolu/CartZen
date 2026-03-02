@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/mongodb';
-import User from "@/models/User";
+import { findUserByEmail, createUser } from '@/lib/mock-db';
 
 export async function POST(req) {
     try {
-        await dbConnect();
         const { name, email, password } = await req.json();
 
         if (!name || !email || !password) {
@@ -13,7 +11,7 @@ export async function POST(req) {
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await findUserByEmail(email);
         if (existingUser) {
             return NextResponse.json({ message: 'User already exists' }, { status: 400 });
         }
@@ -21,15 +19,14 @@ export async function POST(req) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Create user
-        const newUser = await User.create({
+        // Create user in Mock DB
+        const newUser = await createUser({
             name,
             email,
             password: hashedPassword,
-            provider: 'credentials'
         });
 
-        return NextResponse.json({ message: 'User created successfully', user: { id: newUser._id, name, email } }, { status: 201 });
+        return NextResponse.json({ message: 'User created successfully (Mock)', user: { id: newUser.id, name, email } }, { status: 201 });
     } catch (error) {
         console.error('Registration error:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

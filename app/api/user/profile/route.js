@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
-import User from "@/models/User";
+import { findUserByEmail, updateUserProfile } from "@/lib/mock-db";
 
 export async function GET() {
     try {
@@ -10,8 +9,7 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        await dbConnect();
-        const user = await User.findOne({ email: session.user.email });
+        const user = await findUserByEmail(session.user.email);
 
         if (!user) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -38,43 +36,20 @@ export async function PUT(req) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        const { action, ...data } = await req.json();
-        await dbConnect();
+        const data = await req.json();
 
-        let updateQuery = {};
+        // Simplify: Mock update just updates the user object in memory
+        const updatedUser = await updateUserProfile(session.user.email, {
+            name: data.name,
+            phone: data.phone,
+            image: data.image
+        });
 
-        if (action === 'addAddress') {
-            updateQuery = { $push: { savedAddresses: data.address } };
-        } else if (action === 'removeAddress') {
-            updateQuery = { $pull: { savedAddresses: { _id: data.addressId } } };
-        } else if (action === 'setDefaultAddress') {
-            // First set all isDefault to false, then set chosen one to true
-            await User.updateOne(
-                { email: session.user.email },
-                { $set: { "savedAddresses.$[].isDefault": false } }
-            );
-            updateQuery = { $set: { "savedAddresses.$[elem].isDefault": true } };
-            const options = { arrayFilters: [{ "elem._id": data.addressId }], new: true };
-            const user = await User.findOneAndUpdate({ email: session.user.email }, updateQuery, options);
-            return NextResponse.json({ message: "Default address updated", user });
-        } else {
-            // Standard profile update
-            updateQuery = {
-                $set: {
-                    name: data.name,
-                    phone: data.phone,
-                    image: data.image,
-                }
-            };
+        if (!updatedUser) {
+            return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        const updatedUser = await User.findOneAndUpdate(
-            { email: session.user.email },
-            updateQuery,
-            { new: true }
-        );
-
-        return NextResponse.json({ message: "Profile updated", user: updatedUser });
+        return NextResponse.json({ message: "Profile updated (Mock)", user: updatedUser });
     } catch (error) {
         console.error("Profile update error:", error);
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });
