@@ -27,22 +27,27 @@ const handler = NextAuth({
                     throw new Error("No user found with this email");
                 }
 
-                // For mock demo, we support plain text password match if not bcrypt-ed
-                // In this mock, we'll try a simple match first
+                // For mock demo, we support plain text password match first
                 const isMatch = credentials.password === user.password;
 
                 // Fallback to bcrypt if it's a real hashed password in mock
+                // Bcrypt hashes can start with $2a$, $2b$, or $2y$
                 let isValid = isMatch;
-                if (!isValid && user.password.startsWith('$2a$')) {
-                    isValid = await bcrypt.compare(credentials.password, user.password);
+                if (!isValid && user.password && user.password.startsWith('$2')) {
+                    try {
+                        isValid = await bcrypt.compare(credentials.password, user.password);
+                    } catch (err) {
+                        console.error("Bcrypt comparison error:", err);
+                    }
                 }
 
                 if (!isValid) {
+                    console.error("NextAuth: Invalid credentials for", credentials.email);
                     throw new Error("Invalid password");
                 }
 
                 return {
-                    id: user.id,
+                    id: user.id || user._id?.toString() || "mock-id", // handle both formats
                     name: user.name,
                     email: user.email,
                     image: user.image,
@@ -84,12 +89,14 @@ const handler = NextAuth({
     pages: {
         signIn: '/login',
     },
-    secret: process.env.NEXTAUTH_SECRET,
-    debug: process.env.NODE_ENV === 'development' || true, // Force true for debugging on Vercel
+    // CRITICAL: NextAuth requires a secret in production.
+    // If process.env.NEXTAUTH_SECRET is missing, we provide a fallback for this mock-mode.
+    secret: process.env.NEXTAUTH_SECRET || "cartzen-mock-secret-key-12345",
+    debug: true,
 });
 
 if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'production') {
-    console.error("CRITICAL: NEXTAUTH_SECRET is not defined in production!");
+    console.warn("WARNING: NEXTAUTH_SECRET is not defined in production. Using fallback secret for MockDB mode.");
 }
 
 export { handler as GET, handler as POST };
