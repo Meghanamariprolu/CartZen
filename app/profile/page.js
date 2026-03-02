@@ -133,7 +133,7 @@ const ProfilePage = () => {
                         {/* Profile Picture Placeholder */}
                         <div className="absolute -top-16 left-8 md:left-12 group">
                             <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg relative">
-                                {profile.image ? (
+                                {profile.image && !profile.image.includes('pravatar.cc') ? (
                                     <img src={profile.image} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <BsPerson className="text-6xl text-gray-300" />

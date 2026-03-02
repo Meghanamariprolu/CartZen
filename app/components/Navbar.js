@@ -117,7 +117,7 @@ const Navbar = () => {
           >
             <Link href={session ? "/profile" : "/login"}>
               <div className="flex flex-col items-center cursor-pointer group">
-                {session?.user?.image ? (
+                {session?.user?.image && !session.user.image.includes('pravatar.cc') ? (
                   <img src={session.user.image} alt="Profile" className="w-6 h-6 rounded-full object-cover border border-white/20 group-hover:border-white" />
                 ) : (
                   <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">

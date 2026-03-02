@@ -19,7 +19,9 @@ const BagPage = () => {
   if (cart.length === 0) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center px-4">
-        <img src="/empty-bag.png" alt="Empty Bag" className="w-64 mb-8 opacity-20" onError={(e) => e.target.style.display = 'none'} />
+        <div className="w-64 h-64 mb-8 bg-gray-50 rounded-full flex items-center justify-center">
+          <BsBagCheck className="text-8xl text-gray-200" />
+        </div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Hey, it feels so light!</h2>
         <p className="text-gray-500 mb-8 text-center max-w-xs">There is nothing in your bag. Let's add some items.</p>
         <Link href="/wishlist">
