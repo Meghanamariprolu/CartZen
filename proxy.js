@@ -3,8 +3,9 @@ import { withAuth } from "next-auth/middleware";
 export default withAuth({
     pages: {
         signIn: "/login",
-        error: "/login" // Redirect to login on error
+        error: "/login"
     },
+    secret: process.env.NEXTAUTH_SECRET || "cartzen-mock-secret-key-12345",
 });
 
 export const config = {
