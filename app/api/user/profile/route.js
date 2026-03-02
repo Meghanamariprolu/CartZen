@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { findUserByEmail, updateUserProfile } from "@/lib/mock-db";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
@@ -31,7 +32,7 @@ export async function GET() {
 
 export async function PUT(req) {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
