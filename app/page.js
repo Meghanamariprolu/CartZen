@@ -19,8 +19,6 @@ const HomePage = () => {
   React.useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (status === 'authenticated') {
-      router.push('/dashboard');
     }
   }, [status, router]);
 
