@@ -98,13 +98,29 @@ const CheckoutContent = () => {
         setStep(3); // Proceed to Payment
     };
 
-    const handlePlaceOrder = () => {
+    const handlePlaceOrder = async () => {
         setIsProcessing(true);
-        setTimeout(() => {
+        try {
+            await axios.post('/api/orders', {
+                items: checkoutItems.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    quantity: item.quantity,
+                    thumbnail: item.thumbnail
+                })),
+                totalAmount: totalAmount,
+                address: address,
+                paymentMethod: paymentMethod
+            });
             setIsProcessing(false);
             setIsSuccess(true);
             clearCart();
-        }, 2000);
+        } catch (err) {
+            console.error("Failed to place order:", err);
+            setIsProcessing(false);
+            setAddressError("Failed to process order. Please try again.");
+        }
     };
 
     if (!isSuccess && ((!isDirect && cart.length === 0) || (isDirect && !directItem))) {

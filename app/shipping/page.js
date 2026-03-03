@@ -17,7 +17,7 @@ export default function ShippingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Shipping Info */}
-                    <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+                    <div id="shipping" className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm">
                             <BsTruck className="text-2xl text-primary" />
                         </div>
@@ -34,7 +34,7 @@ export default function ShippingPage() {
                     </div>
 
                     {/* Returns Info */}
-                    <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+                    <div id="returns" className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm">
                             <BsArrowCounterclockwise className="text-2xl text-primary" />
                         </div>
@@ -51,7 +51,7 @@ export default function ShippingPage() {
                     </div>
 
                     {/* Cancellation Info */}
-                    <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+                    <div id="cancellation" className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm">
                             <BsArrowLeftRight className="text-2xl text-primary" />
                         </div>

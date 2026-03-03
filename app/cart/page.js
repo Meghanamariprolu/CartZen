@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
-import { BsTrash, BsShieldCheck, BsTruck, BsPlus, BsDash, BsLightningCharge } from 'react-icons/bs';
+import { BsTrash, BsShieldCheck, BsTruck, BsPlus, BsDash, BsLightningCharge, BsBagCheck } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const BagPage = () => {

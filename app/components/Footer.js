@@ -2,10 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa';
 import { BsPatchCheck, BsArrowCounterclockwise } from 'react-icons/bs';
 
 const Footer = () => {
+    const { data: session } = useSession();
+
+    // Hide Footer for unauthenticated users
+    if (!session) return null;
+
     return (
         <footer className="bg-[#0a0f1d] border-t border-gray-800 pt-16 pb-8 mt-20 text-gray-400">
             <div className="max-w-screen-xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -25,12 +31,12 @@ const Footer = () => {
                     <ul className="space-y-3 text-sm">
                         <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
                         <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-                        <li><Link href="/terms" className="hover:text-primary transition-colors">T&C</Link></li>
-                        <li><Link href="/terms" className="hover:text-primary transition-colors">Terms Of Use</Link></li>
-                        <li><Link href="/shipping" className="hover:text-primary transition-colors">Track Orders</Link></li>
-                        <li><Link href="/shipping" className="hover:text-primary transition-colors">Shipping</Link></li>
-                        <li><Link href="/shipping" className="hover:text-primary transition-colors">Cancellation</Link></li>
-                        <li><Link href="/shipping" className="hover:text-primary transition-colors">Returns</Link></li>
+                        <li><Link href="/terms#introduction" className="hover:text-primary transition-colors">T&C</Link></li>
+                        <li><Link href="/terms#use-of-website" className="hover:text-primary transition-colors">Terms Of Use</Link></li>
+                        <li><Link href="/shipping#shipping" className="hover:text-primary transition-colors">Track Orders</Link></li>
+                        <li><Link href="/shipping#shipping" className="hover:text-primary transition-colors">Shipping</Link></li>
+                        <li><Link href="/shipping#cancellation" className="hover:text-primary transition-colors">Cancellation</Link></li>
+                        <li><Link href="/shipping#returns" className="hover:text-primary transition-colors">Returns</Link></li>
                     </ul>
                 </div>
                 <div>

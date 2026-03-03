@@ -5,7 +5,47 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BsEnvelope, BsLock, BsPerson, BsPhone, BsGoogle, BsGithub, BsArrowRight, BsCheckCircleFill, BsExclamationCircle } from 'react-icons/bs';
+import { BsEnvelope, BsLock, BsPerson, BsPhone, BsGoogle, BsGithub, BsArrowRight, BsCheckCircleFill, BsExclamationCircle, BsBag, BsCart3, BsTag, BsGift, BsTruck, BsCreditCard } from 'react-icons/bs';
+
+const BackgroundAnimation = () => {
+    const iconData = React.useMemo(() => [
+        { icon: <BsBag />, color: 'text-fuchsia-400/30', size: 'text-7xl', x: '10%', y: '15%', d: 40 },
+        { icon: <BsCart3 />, color: 'text-blue-300/30', size: 'text-8xl', x: '85%', y: '10%', d: 50 },
+        { icon: <BsTag />, color: 'text-cyan-300/30', size: 'text-6xl', x: '75%', y: '80%', d: 45 },
+        { icon: <BsGift />, color: 'text-primary/40', size: 'text-9xl', x: '15%', y: '75%', d: 60 },
+        { icon: <BsTruck />, color: 'text-purple-400/30', size: 'text-7xl', x: '45%', y: '5%', d: 55 },
+        { icon: <BsCreditCard />, color: 'text-blue-400/30', size: 'text-6xl', x: '90%', y: '50%', d: 42 },
+    ], []);
+
+    return (
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[#0a0f1d]">
+            {/* Ambient Glows */}
+            <div className="absolute top-[-15%] left-[-15%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[-15%] right-[-15%] w-[60%] h-[60%] bg-blue-900/10 rounded-full blur-[120px]"></div>
+
+            {iconData.map((item, idx) => (
+                <motion.div
+                    key={idx}
+                    className={`absolute ${item.size} ${item.color} will-change-transform`}
+                    style={{ left: item.x, top: item.y }}
+                    animate={{
+                        x: [0, 40, -40, 0],
+                        y: [0, -40, 40, 0],
+                        rotate: [0, 90, 0],
+                    }}
+                    transition={{
+                        duration: item.d,
+                        repeat: Infinity,
+                        ease: "linear"
+                    }}
+                >
+                    {item.icon}
+                </motion.div>
+            ))}
+            <div className="absolute inset-0 bg-[#0a0f1d]/30 backdrop-blur-[0.5px]"></div>
+        </div>
+    );
+};
 
 const LoginPage = () => {
     const [loginMethod, setLoginMethod] = useState('email'); // 'email' or 'mobile'
@@ -41,7 +81,7 @@ const LoginPage = () => {
             setOtpSent(true);
             setLoading(false);
             setSuccess('OTP sent to ' + formData.mobile + ' (Hint: 123456)');
-        }, 1500);
+        }, 300);
     };
 
     const handleVerifyOtp = () => {
@@ -56,14 +96,15 @@ const LoginPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (loginMethod === 'mobile') {
-            otpSent ? handleVerifyOtp() : handleSendOtp();
-            return;
-        }
 
         setLoading(true);
         setError('');
         setSuccess('');
+
+        if (isLogin && loginMethod === 'mobile') {
+            otpSent ? handleVerifyOtp() : handleSendOtp();
+            return;
+        }
 
         if (isLogin) {
             // LOGIN logic
@@ -94,6 +135,12 @@ const LoginPage = () => {
             }
 
             try {
+                console.log('Frontend: Starting registration fetch for', formData.email);
+
+                // Add a timeout to prevent indefinite hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -101,10 +148,15 @@ const LoginPage = () => {
                         name: formData.name,
                         email: formData.email,
                         password: formData.password
-                    })
+                    }),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
+                console.log('Frontend: Registration response status:', res.status);
+
                 const data = await res.json();
+                console.log('Frontend: Registration response data:', data);
 
                 if (res.ok) {
                     setSuccess('Account created! Please login.');
@@ -114,7 +166,12 @@ const LoginPage = () => {
                     setError(data.message || 'Registration failed');
                 }
             } catch (err) {
-                setError('Something went wrong. Please try again.');
+                console.error('Frontend: Registration error:', err);
+                if (err.name === 'AbortError') {
+                    setError('Registration timed out. The server might be busy.');
+                } else {
+                    setError('Something went wrong. Please try again.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -122,43 +179,58 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen relative flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden bg-transparent">
+            <BackgroundAnimation />
+            <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
                 <Link href="/">
                     <h1 className="text-center text-3xl font-black tracking-tighter bg-gradient-to-r from-fuchsia-600 via-blue-500 to-cyan-400 bg-clip-text text-transparent inline-block w-full">
                         <span className="italic">CART</span><span className="NOT-italic">ZEN</span>
                     </h1>
                 </Link>
-                <h2 className="mt-6 text-center text-xl font-black text-gray-900 uppercase tracking-widest">
+                <h2 className="mt-6 text-center text-xl font-black text-white uppercase tracking-widest">
                     {isLogin ? 'Welcome Back' : 'Create Account'}
                 </h2>
-                <div className="mt-4 bg-primary/10 border-l-4 border-primary p-4 mx-4 sm:mx-0">
+                <div className="mt-4 bg-primary/20 border-l-4 border-primary p-4 mx-4 sm:mx-0 backdrop-blur-sm">
                     <p className="text-sm text-primary font-bold">
                         Access Restricted: You must login or register an account to enter the website.
                     </p>
                 </div>
-                <div className="mt-4 flex justify-center space-x-4 border-b border-gray-100">
-                    <button
-                        onClick={() => setLoginMethod('email') || setError('') || setSuccess('')}
-                        className={`pb-2 px-4 text-xs font-black uppercase tracking-widest transition-all ${loginMethod === 'email' ? 'border-b-2 border-primary text-primary' : 'text-gray-400'}`}
-                    >
-                        Email
-                    </button>
-                    <button
-                        onClick={() => setLoginMethod('mobile') || setError('') || setSuccess('')}
-                        className={`pb-2 px-4 text-xs font-black uppercase tracking-widest transition-all ${loginMethod === 'mobile' ? 'border-b-2 border-primary text-primary' : 'text-gray-400'}`}
-                    >
-                        Mobile (OTP)
-                    </button>
-                </div>
+                {isLogin && (
+                    <div className="mt-4 flex justify-center space-x-4 border-b border-white/10">
+                        <button
+                            onClick={() => {
+                                setLoginMethod('email');
+                                setOtpSent(false);
+                                setOtp('');
+                                setError('');
+                                setSuccess('');
+                            }}
+                            className={`pb-2 px-4 text-xs font-black uppercase tracking-widest transition-all ${loginMethod === 'email' ? 'border-b-2 border-primary text-primary' : 'text-gray-400 hover:text-gray-300'}`}
+                        >
+                            Email
+                        </button>
+                        <button
+                            onClick={() => {
+                                setLoginMethod('mobile');
+                                setOtpSent(false);
+                                setOtp('');
+                                setError('');
+                                setSuccess('');
+                            }}
+                            className={`pb-2 px-4 text-xs font-black uppercase tracking-widest transition-all ${loginMethod === 'mobile' ? 'border-b-2 border-primary text-primary' : 'text-gray-400 hover:text-gray-300'}`}
+                        >
+                            Mobile (OTP)
+                        </button>
+                    </div>
+                )}
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
                 <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-lg sm:px-10 border border-gray-100">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={isLogin ? loginMethod : 'register'}
+                                key={isLogin ? (isLogin && loginMethod === 'mobile' ? 'mobile' : 'email') : 'register'}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
@@ -266,7 +338,14 @@ const LoginPage = () => {
                             {isLogin ? "Don't have an account? " : "Already have an account? "}
                             <button
                                 type="button"
-                                onClick={() => setIsLogin(!isLogin)}
+                                onClick={() => {
+                                    setIsLogin(!isLogin);
+                                    setLoginMethod('email');
+                                    setOtpSent(false);
+                                    setOtp('');
+                                    setError('');
+                                    setSuccess('');
+                                }}
                                 className="font-bold text-primary hover:text-primary-hover underline"
                             >
                                 {isLogin ? 'Register here' : 'Login here'}

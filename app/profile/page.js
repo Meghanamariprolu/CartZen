@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BsPerson, BsEnvelope, BsPhone, BsGeoAlt, BsPencilSquare, BsCheckCircleFill, BsCamera } from 'react-icons/bs';
+import { BsPerson, BsEnvelope, BsPhone, BsGeoAlt, BsPencilSquare, BsCheckCircleFill, BsCamera, BsArrowUpRight, BsGraphUp } from 'react-icons/bs';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -18,6 +18,7 @@ const ProfilePage = () => {
         image: null
     });
     const [tempProfile, setTempProfile] = useState({ ...profile });
+    const [salesStats, setSalesStats] = useState(null);
     const fileInputRef = React.useRef(null);
 
     const [showSavedToast, setShowSavedToast] = useState(false);
@@ -27,6 +28,7 @@ const ProfilePage = () => {
     useEffect(() => {
         if (session) {
             fetchUserProfile();
+            fetchSalesStats();
         }
     }, [session]);
 
@@ -39,6 +41,15 @@ const ProfilePage = () => {
             console.error("Failed to fetch profile:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSalesStats = async () => {
+        try {
+            const res = await axios.get('/api/dashboard/stats');
+            setSalesStats(res.data);
+        } catch (err) {
+            console.error("Failed to fetch sales stats:", err);
         }
     };
 
@@ -256,6 +267,41 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Sales Analysis Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded shadow-sm p-8 mb-8"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Purchase Insights & Analytics</h3>
+                        <div className="flex items-center space-x-1 text-xs font-black text-green-500">
+                            <span>UP TO DATE</span>
+                            <BsArrowUpRight />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <p className="text-xs text-gray-500 font-bold uppercase mb-4 tracking-tight">Recent Activity Trends</p>
+                            <div className="space-y-4">
+                                {salesStats?.recentActivity.slice(0, 3).map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-sm">
+                                        <span className="text-xs font-bold text-gray-700">{item.name}</span>
+                                        <span className="text-xs font-black text-primary">{item.loss}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex flex-col justify-center items-center bg-gray-50 rounded-sm p-6">
+                            <BsGraphUp className="text-4xl text-primary mb-3" />
+                            <p className="text-sm font-black text-gray-900 uppercase tracking-widest">Growth Factor</p>
+                            <p className="text-2xl font-black text-primary italic">+18.2%</p>
+                            <p className="text-[10px] text-gray-400 font-bold mt-1 tracking-widest uppercase">vs last month</p>
+                        </div>
+                    </div>
+                </motion.div>
 
                 {/* Address Book Section */}
                 <div className="bg-white rounded shadow-sm p-8">
