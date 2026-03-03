@@ -47,9 +47,9 @@ const BackgroundAnimation = () => {
     );
 };
 
-const LoginPage = () => {
+const LoginPage = ({ defaultIsLogin = true }) => {
     const [loginMethod, setLoginMethod] = useState('email'); // 'email' or 'mobile'
-    const [isLogin, setIsLogin] = useState(true);
+    const [isLogin, setIsLogin] = useState(defaultIsLogin);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
